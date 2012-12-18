@@ -12,6 +12,8 @@ import Data.ByteString.Base64 as B64
 import Data.ByteString.UTF8 as B
 import Data.Time.Clock.POSIX
 
+import Mixpanel.Result
+
 data Property = IP String
               | DistinctID String
               | Name String
@@ -31,7 +33,7 @@ jvalue (CustomNumber k v) = J.value k v
 jvalue (CustomTime k v) = J.value k $ (round $ utcTimeToPOSIXSeconds v :: Int)
 jvalue (CustomBool k v) = J.value k v
                 
-track :: String -> String -> [Property] -> IO (Maybe String)
+track :: String -> String -> [Property] -> IO MixpanelResult
 track token event properties = do
   let obj = runJSONGen $ do
         J.value "event" event
@@ -45,8 +47,8 @@ track token event properties = do
   eres <- simpleHTTP (postRequest url)
   
   case eres of
-    Left ce -> return $ Just $ show ce
+    Left ce -> return $ HTTPError $ show ce
     Right res -> case rspBody res of
-      "0" -> return $ Just $ show $ rspReason res
-      "1" -> return Nothing
-      r -> return $ Just $ "Don't understand response: " ++ r
+      "0" -> return $ MixpanelError $ show $ rspReason res
+      "1" -> return Success
+      r -> return $ HTTPError $ "Don't understand response. Should be '0' or '1' but got: " ++ r
