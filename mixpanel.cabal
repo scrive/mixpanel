@@ -1,5 +1,5 @@
 Name:                mixpanel
-Version:             0.0.1
+Version:             0.1.0
 Synopsis: Haskell library for Mixpanel HTTP API.
 
 Description: 
@@ -18,7 +18,8 @@ Cabal-version:       >=1.6
 library
   exposed-modules: 
     Mixpanel.Engage,
-    Mixpanel.Event
+    Mixpanel.Event,
+    Mixpanel.Result
 
   hs-source-dirs: src 
   Build-depends: Crypto == 4.2.*

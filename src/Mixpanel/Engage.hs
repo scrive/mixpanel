@@ -13,6 +13,8 @@ import Data.Time.Format
 import Data.ByteString.Base64 as B64
 import Data.ByteString.UTF8 as B
 
+import Mixpanel.Result
+
 data Property = IP String
               | Email String
               | FirstName String
@@ -42,7 +44,7 @@ jvalue (CustomNumber k v) = J.value k v
 jvalue (CustomTime k v) = J.value k $ formatTime undefined "%Y-%m-%dT%H:%M:%S" v
 jvalue (CustomBool k v) = J.value k v
                 
-set :: String -> String -> [Property] -> IO (Maybe String)
+set :: String -> String -> [Property] -> IO MixpanelResult
 set token distinctid properties = do
   let obj = runJSONGen $ do
         J.value "$token" token
@@ -57,13 +59,13 @@ set token distinctid properties = do
   eres <- simpleHTTP (postRequest url)
   
   case eres of
-    Left ce -> return $ Just $ show ce
+    Left ce -> return $ HTTPError $ show ce
     Right res -> case rspBody res of
-      "0" -> return $ Just $ show $ rspReason res
-      "1" -> return Nothing
-      r -> return $ Just $ "Don't understand response: " ++ r
+      "0" -> return $ MixpanelError $ show $ rspReason res
+      "1" -> return Success
+      r -> return $ HTTPError $ "Don't understand response. Should be '0' or '1'. Got: " ++ r
 
-add :: String -> String -> [Property] -> IO (Maybe String)
+add :: String -> String -> [Property] -> IO MixpanelResult
 add token distinctid properties = do
   let obj = runJSONGen $ do
         J.value "$token" token
@@ -78,8 +80,8 @@ add token distinctid properties = do
   eres <- simpleHTTP (postRequest url)
   
   case eres of
-    Left ce -> return $ Just $ show ce
+    Left ce -> return $ HTTPError $ show ce
     Right res -> case rspBody res of
-      "0" -> return $ Just $ show $ rspReason res
-      "1" -> return Nothing
-      r -> return $ Just $ "Don't understand response: " ++ r
+      "0" -> return $ MixpanelError $ show $ rspReason res
+      "1" -> return Success
+      r -> return $ HTTPError $ "Don't understand response. Should be '0' or '1'. Got: " ++ r
