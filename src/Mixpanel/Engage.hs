@@ -1,4 +1,4 @@
-module Mixpanel.Engage (Property(..), set, add)
+module Mixpanel.Engage (Property(..), set, add, MixpanelResult(..))
 
 where
 
@@ -8,25 +8,13 @@ import Text.JSON.Gen
 import qualified Text.JSON.Gen as J
 import Data.List
 import Control.Monad
-import Data.Time.Clock
 import Data.Time.Format
 import Data.ByteString.Base64 as B64
 import Data.ByteString.UTF8 as B
 
 import Mixpanel.Result
+import Mixpanel.Properties
 
-data Property = IP String
-              | Email String
-              | FirstName String
-              | LastName String
-              | Created UTCTime
-              | LastLogin UTCTime
-              | Username String
-              | CustomString String String
-              | CustomNumber String Double
-              | CustomTime String UTCTime
-              | CustomBool String Bool
-                
 isip :: Property -> Bool
 isip (IP _) = True
 isip _      = False
@@ -39,10 +27,12 @@ jvalue (LastName s)  = J.value "$last_name" s
 jvalue (Created t)   = J.value "$created" $ formatTime undefined "%Y-%m-%dT%H:%M:%S" t
 jvalue (LastLogin t) = J.value "$last_login" $ formatTime undefined "%Y-%m-%dT%H:%M:%S" t
 jvalue (Username s)  = J.value "$username" s
+jvalue (FullName s)  = J.value "Full name" s
 jvalue (CustomString k v)  = J.value k v
 jvalue (CustomNumber k v) = J.value k v
 jvalue (CustomTime k v) = J.value k $ formatTime undefined "%Y-%m-%dT%H:%M:%S" v
 jvalue (CustomBool k v) = J.value k v
+jvalue _ = return () -- ignore Time property
                 
 set :: String -> String -> [Property] -> IO MixpanelResult
 set token distinctid properties = do
