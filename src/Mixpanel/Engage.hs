@@ -7,6 +7,7 @@ import Text.JSON as J
 import Text.JSON.Gen
 import qualified Text.JSON.Gen as J
 import Data.List
+import Data.Maybe
 import Control.Monad
 import Data.Time.Format
 import Data.ByteString.Base64 as B64
@@ -39,8 +40,10 @@ set token distinctid properties = do
   let obj = runJSONGen $ do
         J.value "$token" token
         J.value "$distinct_id" distinctid
+        -- $ip must be set either to 0 or the IP supplied, otherwise Mixpanel
+        -- thinks they live in Dublin, Ireland (AWS EU server location)
+        jvalue $ fromMaybe (IP "0") (find isip properties)
         -- $ip must be in outer json
-        maybe (return ()) jvalue $ find isip properties
         J.object "$set" $ forM_ (filter (not . isip) properties) jvalue
       jsstring = J.encode obj
       jsb64 = B.toString $ B64.encode $ B.fromString jsstring
