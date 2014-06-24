@@ -24,13 +24,13 @@ jvalue (CustomTime k v) = J.value k $ (round $ utcTimeToPOSIXSeconds v :: Int)
 jvalue (CustomBool k v) = J.value k v
 jvalue _ = return () -- Ingore Email, FirstName, LastName, and Created
 
-track :: String -> String -> String -> [Property] -> IO MixpanelResult
-track token distinctid event properties = do
+track :: String -> Maybe String -> String -> [Property] -> IO MixpanelResult
+track token mdistinctid event properties = do
   let obj = runJSONGen $ do
         J.value "event" event
         J.object "properties" $ do
           J.value "token" token
-          J.value "distinct_id" distinctid
+          maybe (return ()) (J.value "distinct_id") mdistinctid
           forM_ properties jvalue
       jsstring = J.encode obj
       jsb64 = B.toString $ B64.encode $ B.fromString jsstring
