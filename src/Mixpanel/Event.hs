@@ -1,18 +1,23 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Mixpanel.Event (Property(..), track, MixpanelResult(..))
 
 where
 
-import Network.HTTP hiding (Custom)
+import Network.HTTP.Client
+import Network.HTTP.Client.TLS
+import Network.HTTP.Simple (getResponseStatusCode, getResponseBody, setRequestMethod)
+
 import Text.JSON as J
 import Text.JSON.Gen
 import qualified Text.JSON.Gen as J
 import Control.Monad
 import Data.ByteString.Base64 as B64
 import Data.ByteString.UTF8 as B
+import Data.ByteString.Lazy.UTF8 as BU
 import Data.Time.Clock.POSIX
 
 import Mixpanel.Result
-import Mixpanel.Properties                
+import Mixpanel.Properties
 
 jvalue :: Monad m => Property -> JSONGenT m ()
 jvalue (IP s)         = J.value "ip" s
@@ -36,11 +41,15 @@ track token mdistinctid event properties = do
       jsb64 = B.toString $ B64.encode $ B.fromString jsstring
 
   let url = "http://api.mixpanel.com/track?data=" ++ jsb64
-  eres <- simpleHTTP (postRequest url)
-  
-  case eres of
-    Left ce -> return $ HTTPError $ show ce
-    Right res -> case rspBody res of
-      "0" -> return $ MixpanelError $ show $ rspReason res
-      "1" -> return Success
-      r -> return $ HTTPError $ "Don't understand response. Should be '0' or '1' but got: " ++ r
+  reqManager <- newTlsManager
+  let timeout = responseTimeoutMicro $ 10 {- secs -} * 1000000
+      req = (setRequestMethod "POST") $
+              (parseRequest_ url) { responseTimeout = timeout }
+  resp <- httpLbs req reqManager
+  if (getResponseStatusCode resp == 200)
+    then do
+      case (getResponseBody resp) of
+        "0" -> return $ MixpanelError $ "Mixpanel response is 0"
+        "1" -> return Success
+        r -> return $ HTTPError $ "Don't understand response. Should be '0' or '1' but got: " ++ BU.toString r
+    else return $ HTTPError $ show $ getResponseStatusCode resp

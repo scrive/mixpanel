@@ -1,5 +1,5 @@
 Name:                mixpanel
-Version:             0.1.6
+Version:             0.1.6.1
 Synopsis: Haskell library for Mixpanel HTTP API.
 
 Description:
@@ -27,6 +27,9 @@ library
   build-depends: base >= 4 && < 6
   Build-depends: time
   Build-depends: HTTP >= 4000.0
+  Build-depends: http-client >= 0.6.1
+  Build-depends: http-client-tls >= 0.3.5.3
+  Build-depends: http-conduit >= 2.3.5
   build-depends: containers
   build-depends: base64-bytestring >= 0.1.0.2
   build-depends: utf8-string  >= 0.3.6
