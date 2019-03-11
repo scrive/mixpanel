@@ -1,5 +1,5 @@
 Name:                mixpanel
-Version:             0.1.6.1
+Version:             0.1.6.2
 Synopsis: Haskell library for Mixpanel HTTP API.
 
 Description:
