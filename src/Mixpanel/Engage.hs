@@ -38,16 +38,16 @@ jvalue (CustomNumber k v) = J.value k v
 jvalue (CustomTime k v) = J.value k $ formatTime undefined "%Y-%m-%dT%H:%M:%S" v
 jvalue (CustomBool k v) = J.value k v
 jvalue _ = return () -- ignore Time property
-                
+
 set :: String -> String -> [Property] -> IO MixpanelResult
 set token distinctid properties = do
   let obj = runJSONGen $ do
         J.value "$token" token
         J.value "$distinct_id" distinctid
-        -- $ip must be set either to 0 or the IP supplied, otherwise Mixpanel
+        -- ip must be set either to 0 or the IP supplied, otherwise Mixpanel
         -- thinks they live in Dublin, Ireland (AWS EU server location)
         jvalue $ fromMaybe (IP "0") (find isip properties)
-        -- $ip must be in outer json
+        -- ip must be in outer json
         J.object "$set" $ forM_ (filter (not . isip) properties) jvalue
       jsstring = J.encode obj
       jsb64 = B.toString $ B64.encode $ B.fromString jsstring
@@ -74,7 +74,7 @@ add token distinctid properties = do
   let obj = runJSONGen $ do
         J.value "$token" token
         J.value "$distinct_id" distinctid
-        -- $ip must be in outer json
+        -- ip must be in outer json
         maybe (return ()) jvalue $ find isip properties
         J.object "$add" $ forM_ (filter (not . isip) properties) jvalue
       jsstring = J.encode obj
@@ -94,5 +94,3 @@ add token distinctid properties = do
         "1" -> return Success
         r -> return $ HTTPError $ "Don't understand response. Should be '0' or '1' but got: " ++ BU.toString r
     else return $ HTTPError $ show $ getResponseStatusCode resp
-
-
